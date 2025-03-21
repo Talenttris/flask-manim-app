@@ -14,3 +14,4 @@ itsdangerous>=2.1.2
 Jinja2>=3.1.2
 Werkzeug>=2.3.3
 blinker>=1.6.2
+ffmpeg-python>=0.2.0
