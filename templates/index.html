@@ -1,23 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manim Animation Generator</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>AI Animation and Voiceover Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons@4.28.0/dist/feather.min.js"></script>
 </head>
+
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center mb-4">Manim Animation Generator</h1>
-        <form method="POST">
-            <div class="mb-3">
-                <label for="script" class="form-label">Enter your script:</label>
-                <textarea class="form-control" id="script" name="script" rows="5" required></textarea>
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10 col-sm-12">
+                <div class="text-center mb-4">
+                    <h1 class="display-4 text-primary">AI-Powered Animation & Voiceover Generator</h1>
+                    <p class="lead text-muted">Generate professional animations with voiceovers in seconds!</p>
+                </div>
+                
+                <form method="POST" action="/" enctype="multipart/form-data">
+                    <div class="form-group mb-4">
+                        <label for="script" class="h5">Enter Your Script</label>
+                        <textarea id="script" name="script" rows="4" class="form-control" placeholder="Type your script here..." required></textarea>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label for="voice" class="h5">Choose Voice</label>
+                        <select id="voice" name="voice" class="form-select" required>
+                            <option value="Rachel">Rachel</option>
+                            <option value="John">John</option>
+                            <option value="Sara">Sara</option>
+                            <!-- Add more voices if needed -->
+                        </select>
+                    </div>
+
+                    <div class="d-grid gap-2 mb-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Generate Animation & Voiceover</button>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <p class="text-muted">Powered by AI and Modern Animation Tools</p>
+                    </div>
+                </form>
+
             </div>
-            <button type="submit" class="btn btn-primary">Generate Animation</button>
-        </form>
+        </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">© 2025 AI Animation Studio. All Rights Reserved.</p>
+            <p class="mb-0"><a href="#" class="text-white">Terms of Service</a> | <a href="#" class="text-white">Privacy Policy</a></p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        feather.replace(); // To enable feather icons
+    </script>
 </body>
+
 </html>
