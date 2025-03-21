@@ -1,88 +1,83 @@
-import os
-import requests
 from flask import Flask, request, render_template, send_file
-from moviepy.editor import VideoFileClip, AudioFileClip
-from dotenv import load_dotenv
-from pexels_api import API as PexelsAPI
-from whisper import Whisper
+from gtts import gTTS
+from moviepy.editor import VideoFileClip, AudioFileClip  # Import VideoFileClip and AudioFileClip
+import subprocess
+from pexels import API as PexelsAPI  # Correct import for Pexels API
 
-# Load environment variables
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env
 load_dotenv()
 
-# Initialize Flask app
+# Initialize the Flask app
 app = Flask(__name__)
 
-# API keys from environment
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-D_ID_API_KEY = os.getenv("D_ID_API_KEY")
+# Fetch the Pexels API key from environment variables
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
-WHISPER_API_KEY = os.getenv("WHISPER_API_KEY")
 
-# 1. AI Voiceover Generation (Completed with ElevenLabs)
-def generate_voiceover(script, voice="Rachel", output_file="voiceover.mp3"):
-    headers = {
-        "Authorization": f"Bearer {ELEVENLABS_API_KEY}",
-        "Content-Type": "application/json"
-    }
+# Initialize the Pexels API
+pexels_api = PexelsAPI(PEXELS_API_KEY)
+
+# Generate voiceover using gTTS
+def generate_voiceover(script, output_file="voiceover.mp3"):
+    tts = gTTS(text=script, lang='en')  # Generate voiceover
+    tts.save(output_file)  # Save to file
+    return output_file
+
+# Generate animation using Manim
+def generate_animation(script, output_file="animation.mp4"):
+    # Write the Manim script to a file
+    with open("manim_script.py", "w") as f:
+        f.write(f"""
+from manim import *
+
+class ExampleAnimation(Scene):
+    def construct(self):
+        text = Text("{script}")
+        self.play(Write(text))
+        self.wait(2)
+
+scene = ExampleAnimation()
+scene.render()
+        """)
     
-    data = {"text": script, "voice": voice}
-    response = requests.post("https://api.elevenlabs.io/v1/text-to-speech", json=data, headers=headers)
-    
-    if response.status_code == 200:
-        with open(output_file, 'wb') as f:
-            f.write(response.content)
-        return output_file
-    return None
+    # Run the Manim script
+    subprocess.run(["manim", "-ql", "manim_script.py", "ExampleAnimation", "-o", output_file])
+    return output_file
 
-# 2. AI Avatar Generation (D-ID API)
-def generate_avatar(script, avatar_name="Rachel"):
-    # Integrate with D-ID API for AI avatar
-    response = requests.post(
-        "https://api.d-id.com/avatars",
-        headers={"Authorization": f"Bearer {D_ID_API_KEY}"},
-        json={"script": script, "avatar": avatar_name}
-    )
-    avatar_video = "avatar_video.mp4"  # Store avatar video locally
-    with open(avatar_video, 'wb') as f:
-        f.write(response.content)  # Save the avatar video
-    return avatar_video
+# Sync voiceover with animation
+def sync_voiceover_with_animation(animation_file, voiceover_file, output_file="final_output.mp4"):
+    animation = VideoFileClip(animation_file)  # Load animation
+    voiceover = AudioFileClip(voiceover_file)  # Load voiceover
 
-# 3. Stock Footage (Pexels API)
-def fetch_stock_video(query="nature"):
-    pexels = PexelsAPI(PEXELS_API_KEY)
-    pexels.search(query, page=1, results_per_page=1)
-    video_url = pexels.get_videos()[0].video_files[0].link  # Extract video link
-    return video_url
+    # Ensure the animation and voiceover are the same length
+    if animation.duration > voiceover.duration:
+        animation = animation.subclip(0, voiceover.duration)
+    else:
+        voiceover = voiceover.subclip(0, animation.duration)
 
-# 4. Subtitles & Effects (Whisper AI)
-def generate_subtitles(video_file):
-    whisper = Whisper(WHISPER_API_KEY)
-    subtitles = whisper.transcribe(video_file)
-    return subtitles
+    # Set the voiceover as the audio for the animation
+    final_video = animation.set_audio(voiceover)
+    final_video.write_videofile(output_file, codec="libx264")
+    return output_file
 
+# Flask route for the web app
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
         script = request.form["script"]
-        voice = request.form.get("voice", "Rachel")
-
+        
         # Generate voiceover
-        voiceover_file = generate_voiceover(script, voice)
-        if not voiceover_file:
-            return "Error generating voiceover", 500
-
-        # Generate avatar video
-        avatar_video_file = generate_avatar(script)
-        if not avatar_video_file:
-            return "Error generating avatar video", 500
+        voiceover_file = generate_voiceover(script)
         
-        # Fetch stock footage
-        stock_video_url = fetch_stock_video()
+        # Generate animation
+        animation_file = generate_animation(script)
         
-        # Combine everything (animations, voice, avatar, stock footage, subtitles) here
-        # Sync everything and generate final video
-
-        return send_file(avatar_video_file, as_attachment=True)
+        # Sync voiceover and animation
+        final_output = sync_voiceover_with_animation(animation_file, voiceover_file)
+        
+        return send_file(final_output, as_attachment=True)
     
     return render_template("index.html")
 
