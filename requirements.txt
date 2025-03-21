@@ -17,4 +17,4 @@ blinker>=1.6.2
 ffmpeg-python>=0.2.0
 python-dotenv>=0.20.0  # To load environment variables for API keys securely
 openai==0.27.0  # OpenAI SDK for ElevenLabs API integration
-pexels==1.0.3
+pexels==0.0.11
