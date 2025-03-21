@@ -1,140 +1,95 @@
 import os
-from flask import Flask, render_template, request, jsonify
-from dotenv import load_dotenv
 import openai
+from flask import Flask, request, jsonify, render_template
+from dotenv import load_dotenv
+import moviepy.editor as mp
 import requests
-from pexels import Pexels
-import moviepy.editor as mpy
-import json
+from pydub import AudioSegment
+from pexels import API
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Initialize Flask app
 app = Flask(__name__)
 
-# Set up API keys from .env
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-D_ID_API_KEY = os.getenv("D_ID_API_KEY")
-PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
-WHISPER_API_KEY = os.getenv("WHISPER_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# Load environment variables
+openai.api_key = os.getenv('OPENAI_API_KEY')
+PEXELS_API_KEY = os.getenv('PEXELS_API_KEY')
 
-# Initialize APIs
-openai.api_key = OPENAI_API_KEY
-pexels_api = Pexels(PEXELS_API_KEY)
+# Pexels API setup (if you use it for video/stock footage)
+pexels_api = API(PEXELS_API_KEY)
 
-# Route to serve homepage
+# Home route to render UI
 @app.route('/')
 def home():
     return render_template('index.html')
 
-# Route to generate AI voiceover using ElevenLabs API
-@app.route('/generate_voice', methods=['POST'])
-def generate_voice():
-    text = request.form['text']
-    voice = request.form['voice']
-    voiceover_url = f'https://api.elevenlabs.io/v1/generate?voice={voice}&text={text}'
-
-    headers = {
-        "Authorization": f"Bearer {ELEVENLABS_API_KEY}"
-    }
+# AI Voiceover (via OpenAI API)
+@app.route('/generate_voiceover', methods=['POST'])
+def generate_voiceover():
+    data = request.json
+    text = data.get("text")
+    if not text:
+        return jsonify({"error": "Text input is required"}), 400
     
-    response = requests.post(voiceover_url, headers=headers)
-    audio_url = response.json().get('audio_url', None)
-    
-    return jsonify({'audio_url': audio_url})
+    # Generating voiceover with OpenAI API or other services
+    voice = generate_ai_voiceover(text)  # Placeholder for voice generation
+    return jsonify({"voiceover": voice})
 
-# Route to generate AI avatar using D-ID API
+# AI Voiceover Function (to be implemented based on available APIs)
+def generate_ai_voiceover(text):
+    # Use OpenAI API or any other voice synthesis tool here
+    return "Generated voiceover for the text"
+
+# Avatar generation function (using D-ID or another AI tool)
 @app.route('/generate_avatar', methods=['POST'])
 def generate_avatar():
-    text = request.form['text']
+    data = request.json
+    text = data.get("text")
+    if not text:
+        return jsonify({"error": "Text input is required"}), 400
     
-    # D-ID API request to create avatar from text
-    avatar_url = f'https://api.d-id.com/v1/avatars'
-    headers = {
-        "Authorization": f"Bearer {D_ID_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "text": text
-    }
-    
-    response = requests.post(avatar_url, headers=headers, json=payload)
-    avatar_response = response.json()
-    
-    avatar_video_url = avatar_response.get('video_url', None)
-    
-    return jsonify({'avatar_video_url': avatar_video_url})
+    avatar = generate_ai_avatar(text)
+    return jsonify({"avatar": avatar})
 
-# Route to fetch stock footage from Pexels
-@app.route('/get_stock_footage', methods=['GET'])
-def get_stock_footage():
-    query = request.args.get('query', 'nature')
-    results = pexels_api.search(query, per_page=5)
-    videos = []
-    
-    for photo in results['photos']:
-        videos.append(photo['url'])
+def generate_ai_avatar(text):
+    # Implement using D-ID or another avatar creation service
+    return "Generated Avatar Image URL or Information"
 
-    return jsonify({'videos': videos})
-
-# Route to generate subtitles using Whisper API
+# Subtitles generation function (using Whisper or another AI tool)
 @app.route('/generate_subtitles', methods=['POST'])
 def generate_subtitles():
-    video_file = request.files['video']
+    data = request.json
+    audio_url = data.get("audio_url")
+    if not audio_url:
+        return jsonify({"error": "Audio URL is required"}), 400
     
-    # Save the video file to a temporary location
-    video_path = os.path.join('uploads', video_file.filename)
-    video_file.save(video_path)
-    
-    # Send video to Whisper API for subtitle generation
-    whisper_url = 'https://api.openai.com/v1/audio/transcriptions'
-    headers = {
-        'Authorization': f'Bearer {WHISPER_API_KEY}'
-    }
-    
-    files = {'file': open(video_path, 'rb')}
-    data = {
-        'model': 'whisper-1',
-        'language': 'en',
-    }
-    
-    response = requests.post(whisper_url, headers=headers, files=files, data=data)
-    
-    transcription = response.json()
-    subtitles = transcription.get('text', None)
-    
-    return jsonify({'subtitles': subtitles})
+    subtitles = generate_subtitles_from_audio(audio_url)
+    return jsonify({"subtitles": subtitles})
 
-# Route to generate a simple video using MoviePy (just for demo purposes)
-@app.route('/generate_video', methods=['POST'])
-def generate_video():
-    audio_url = request.form['audio_url']
-    video_url = request.form['video_url']
-    
-    # Download audio and video files from URLs
-    audio_file = requests.get(audio_url)
-    video_file = requests.get(video_url)
-    
-    # Save files locally (This step may need improvement for larger files)
-    with open("audio.mp3", 'wb') as audio_out:
-        audio_out.write(audio_file.content)
-    with open("video.mp4", 'wb') as video_out:
-        video_out.write(video_file.content)
-    
-    # Create a video clip from the downloaded video
-    video_clip = mpy.VideoFileClip("video.mp4")
-    
-    # Set the audio of the video clip
-    audio_clip = mpy.AudioFileClip("audio.mp3")
-    final_video = video_clip.set_audio(audio_clip)
-    
-    # Write the final video to a file
-    final_video.write_videofile("final_video.mp4")
-    
-    return jsonify({'message': 'Video created successfully'})
+def generate_subtitles_from_audio(audio_url):
+    # Implement using Whisper or other tools to transcribe and generate subtitles
+    return "Generated Subtitles"
 
-# Start the Flask app
+# Movie or video editing function
+@app.route('/edit_video', methods=['POST'])
+def edit_video():
+    data = request.json
+    video_url = data.get("video_url")
+    if not video_url:
+        return jsonify({"error": "Video URL is required"}), 400
+    
+    video = download_video(video_url)
+    edited_video = apply_video_edits(video)
+    return jsonify({"video": edited_video})
+
+def download_video(video_url):
+    # Download the video from the URL
+    response = requests.get(video_url)
+    return response.content
+
+def apply_video_edits(video):
+    # Apply moviepy edits here (such as trim, add audio, etc.)
+    return "Edited Video URL or Information"
+
 if __name__ == '__main__':
     app.run(debug=True)
