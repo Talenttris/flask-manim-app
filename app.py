@@ -1,5 +1,5 @@
 from flask import Flask, request, render_template, send_file
-from gtts import gTTS  # Use gTTS instead of elevenlabs
+from gtts import gTTS
 from moviepy.editor import VideoFileClip, AudioFileClip  # Import VideoFileClip and AudioFileClip
 import subprocess
 
