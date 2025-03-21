@@ -1,7 +1,9 @@
+import os
+import tempfile
+import subprocess
 from flask import Flask, request, render_template, send_file
 from gtts import gTTS
-from moviepy.editor import VideoFileClip, AudioFileClip  # Import VideoFileClip and AudioFileClip
-import subprocess
+from moviepy.editor import VideoFileClip, AudioFileClip
 
 # Create the Flask app
 app = Flask(__name__)
@@ -13,10 +15,14 @@ def generate_voiceover(script, output_file="voiceover.mp3"):
     return output_file
 
 # Generate animation using Manim
-def generate_animation(script, output_file="animation.mp4"):
-    # Write the Manim script to a file
-    with open("manim_script.py", "w") as f:
-        f.write(f"""
+def generate_animation(script):
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        script_path = os.path.join(tmpdirname, "manim_script.py")
+        output_file = os.path.join(tmpdirname, "animation.mp4")
+
+        # Write the Manim script to a file
+        with open(script_path, "w") as f:
+            f.write(f"""
 from manim import *
 
 class ExampleAnimation(Scene):
@@ -24,14 +30,15 @@ class ExampleAnimation(Scene):
         text = Text("{script}")
         self.play(Write(text))
         self.wait(2)
+""")
 
-scene = ExampleAnimation()
-scene.render()
-        """)
-    
-    # Run the Manim script
-    subprocess.run(["manim", "-ql", "manim_script.py", "ExampleAnimation", "-o", output_file])
-    return output_file
+        # Run Manim with headless settings
+        subprocess.run(
+            ["manim", "-pql", script_path, "ExampleAnimation", "--media_dir", tmpdirname, "--disable_caching"],
+            check=True
+        )
+
+        return output_file  # Return the generated animation file path
 
 # Sync voiceover with animation
 def sync_voiceover_with_animation(animation_file, voiceover_file, output_file="final_output.mp4"):
@@ -69,4 +76,5 @@ def index():
     return render_template("index.html")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Use Render's assigned port
+    app.run(host="0.0.0.0", port=port, debug=True)
