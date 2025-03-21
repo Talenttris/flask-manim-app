@@ -1,8 +1,7 @@
 Flask==2.3.2
 gtts==2.3.2
-moviepy==1.0.3
-manim==0.16.0.post0
-decorator==4.4.2
+moviepy>=2.0.0
+manim==0.17.3
 numpy>=1.17.3
 Pillow>=9.1
 requests>=2.27
