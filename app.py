@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import moviepy.editor as mp
 import requests
 from pydub import AudioSegment
-from pexels import API
+from pexels_api import API  # Correct import for pexels-api
 
 load_dotenv()
 
@@ -15,7 +15,7 @@ app = Flask(__name__)
 openai.api_key = os.getenv('OPENAI_API_KEY')
 PEXELS_API_KEY = os.getenv('PEXELS_API_KEY')
 
-# Pexels API setup (if you use it for video/stock footage)
+# Pexels API setup (correct usage of Pexels API client)
 pexels_api = API(PEXELS_API_KEY)
 
 # Home route to render UI
