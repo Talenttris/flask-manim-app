@@ -1,24 +1,73 @@
+/* Global Styles */
 body {
+    font-family: 'Roboto', sans-serif;
     background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
 }
 
+h1, h5 {
+    font-family: 'Poppins', sans-serif;
+}
+
+/* Hero Section */
 .container {
-    background-color: #ffffff;
-    padding: 20px;
+    max-width: 900px;
+    margin: auto;
+    padding: 0 15px;
+}
+
+.text-primary {
+    color: #007bff;
+}
+
+/* Form Styles */
+textarea {
     border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ced4da;
+    transition: all 0.3s ease;
 }
 
-h1 {
-    color: #333;
-}
-
-.btn-primary {
-    background-color: #007bff;
+textarea:focus {
     border-color: #007bff;
+    outline: none;
 }
 
-.btn-primary:hover {
+.form-select {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+}
+
+.form-select:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+button.btn-primary {
+    border-radius: 8px;
+    padding: 12px 24px;
+    font-size: 18px;
+}
+
+button.btn-primary:hover {
     background-color: #0056b3;
-    border-color: #004085;
+    transition: all 0.3s ease;
+}
+
+/* Footer Styles */
+footer {
+    background-color: #343a40;
+}
+
+footer p {
+    font-size: 14px;
+    color: #adb5bd;
+}
+
+footer a {
+    color: #adb5bd;
+}
+
+footer a:hover {
+    color: #ffffff;
 }
