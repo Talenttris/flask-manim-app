@@ -2,7 +2,7 @@ from flask import Flask, request, render_template, send_file
 from gtts import gTTS
 from moviepy.editor import VideoFileClip, AudioFileClip  # Import VideoFileClip and AudioFileClip
 import subprocess
-from pexels import API as PexelsAPI  # Correct import for Pexels API
+from pexels import Pexels  # Correct import for Pexels API
 
 import os
 from dotenv import load_dotenv
@@ -16,8 +16,8 @@ app = Flask(__name__)
 # Fetch the Pexels API key from environment variables
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
 
-# Initialize the Pexels API
-pexels_api = PexelsAPI(PEXELS_API_KEY)
+# Initialize the Pexels API client
+pexels_api = Pexels(PEXELS_API_KEY)
 
 # Generate voiceover using gTTS
 def generate_voiceover(script, output_file="voiceover.mp3"):
