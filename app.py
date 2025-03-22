@@ -1,132 +1,183 @@
 import os
-from flask import Flask, request, jsonify
-import openai
-from pexels_api import API as PexelsAPI
-from pydub import AudioSegment
-import whisper
-import requests
-from dotenv import load_dotenv
+import base64
 import random
 import string
-from elevenlabs import generate, play, set_api_key
-import base64
-import json
-from PIL import Image
-from io import BytesIO
-from pydub.playback import play as pydub_play
-from pydub import AudioSegment
+import requests
+from flask import Flask, request, jsonify, render_template
+from dotenv import load_dotenv
+from moviepy.editor import VideoFileClip, TextClip, CompositeVideoClip
+from elevenlabs import generate, set_api_key
+import whisper
+from pexels_api import API as PexelsAPI
 
+# Load environment variables from .env file
 load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
 
-# Load your API keys from .env file
+# Load API keys from .env
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-D_ID_API_KEY = os.getenv("D_ID_API_KEY")
-WHISPER_API_KEY = os.getenv("WHISPER_API_KEY")
-ELEVEN_LABS_API_KEY = os.getenv("ELEVEN_LABS_API_KEY")
+DID_API_KEY = os.getenv("DID_API_KEY")
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
+WHISPER_API_KEY = os.getenv("WHISPER_API_KEY")  # (if needed for advanced config)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")      # (if using OpenAI GPT)
+# (If not used, these keys can be removed from the .env)
 
-# Set the API keys for third-party services
-openai.api_key = OPENAI_API_KEY
-set_api_key(ELEVEN_LABS_API_KEY)
+# Set ElevenLabs API key for the library
+set_api_key(ELEVENLABS_API_KEY)
 
-# Initialize Pexels API
+# Initialize Pexels API client
 pexels = PexelsAPI(PEXELS_API_KEY)
 
-# Initialize Whisper for subtitle generation
-whisper_model = whisper.load_model("base")  # Change the model if needed
+# Load the Whisper model (using the open-source model)
+whisper_model = whisper.load_model("base")
 
-# Helper function to generate random string
+# Helper: Generate a random string for filenames
 def generate_random_string(length=12):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
-# Helper function to generate speech from text using ElevenLabs
-def generate_speech(text):
-    audio = generate(text, voice="en_us_male")
-    return audio
+# ---------------------------------------
+# Endpoint: Home (renders a basic UI)
+# ---------------------------------------
+@app.route('/')
+def home():
+    return render_template('index.html')
 
-# Endpoint to get Pexels images
-@app.route('/pexels', methods=['GET'])
-def get_pexels_images():
-    query = request.args.get('query', 'nature')  # Default to 'nature' if no query is provided
-    pexels.search(query, page=1, results_per_page=5)
-    photos = pexels.get_entries()
-    results = [{"url": photo.url, "photographer": photo.photographer} for photo in photos]
-    return jsonify(results)
-
-# Endpoint to generate AI voiceover using ElevenLabs API
+# ---------------------------------------
+# Endpoint: Generate AI voiceover using ElevenLabs
+# ---------------------------------------
 @app.route('/generate_voiceover', methods=['POST'])
-def generate_voiceover():
+def generate_voiceover_route():
     data = request.get_json()
-    text = data.get('text', '')
-    
-    # Generate speech using ElevenLabs
-    audio = generate_speech(text)
-    
-    # Save the generated audio file to a temporary location
-    file_name = generate_random_string() + ".mp3"
-    audio.export(file_name, format="mp3")
-    
-    # Send the generated audio file as a response
-    with open(file_name, "rb") as f:
-        audio_data = base64.b64encode(f.read()).decode('utf-8')
-    
-    return jsonify({"audio": audio_data, "file_name": file_name})
+    text = data.get("text", "")
+    voice = data.get("voice", "Bella")  # default voice; adjust per ElevenLabs docs
+    if not text:
+        return jsonify({"error": "Text is required"}), 400
 
-# Endpoint to generate subtitles using Whisper
-@app.route('/generate_subtitles', methods=['POST'])
-def generate_subtitles():
-    data = request.get_json()
-    audio_file = data.get('audio_file')  # Expecting base64-encoded audio file
-    
-    # Decode the base64 audio file
-    audio_data = base64.b64decode(audio_file)
-    audio_path = "/tmp/temp_audio.mp3"
-    
-    with open(audio_path, "wb") as f:
-        f.write(audio_data)
-    
-    # Use Whisper to generate subtitles
-    result = whisper_model.transcribe(audio_path)
-    subtitles = result['text']
-    
-    return jsonify({"subtitles": subtitles})
+    # Generate voiceover using ElevenLabs API
+    audio_url = generate(text, voice=voice)  # This returns the URL for the audio file
+    # In a real app, you might download and process this audio as needed.
+    return jsonify({"audio_url": audio_url})
 
-# Endpoint to generate avatar using D-ID API
+# ---------------------------------------
+# Endpoint: Generate AI avatar video using D-ID REST API
+# ---------------------------------------
 @app.route('/generate_avatar', methods=['POST'])
 def generate_avatar():
     data = request.get_json()
-    image_url = data.get('image_url')
-    avatar_name = data.get('name', 'Avatar')
-    
-    # Generate avatar using D-ID API
-    response = requests.post(
-        "https://api.d-id.com/talks",
-        headers={"Authorization": f"Bearer {D_ID_API_KEY}"},
-        json={"source_url": image_url, "output_format": "mp4", "voice": "en_us_male", "name": avatar_name},
-    )
-    
+    image_url = data.get("image_url")
+    script = data.get("script", "Hello, this is your AI avatar speaking.")
+    if not image_url:
+        return jsonify({"error": "Image URL is required"}), 400
+
+    url = "https://api.d-id.com/talks"
+    headers = {"Authorization": f"Bearer {DID_API_KEY}", "Content-Type": "application/json"}
+    payload = {
+        "source_url": image_url,
+        "script": {"type": "text", "input": script},
+        "output_format": "mp4"
+    }
+    response = requests.post(url, headers=headers, json=payload)
     if response.status_code == 200:
         video_url = response.json().get("output_url")
         return jsonify({"video_url": video_url})
     else:
-        return jsonify({"error": "Failed to generate avatar"}), 400
+        return jsonify({"error": "Avatar generation failed", "details": response.text}), 400
 
-# Endpoint to interact with OpenAI's GPT model
+# ---------------------------------------
+# Endpoint: Generate subtitles using Whisper
+# ---------------------------------------
+@app.route('/generate_subtitles', methods=['POST'])
+def generate_subtitles():
+    # Expect a base64-encoded audio file in the request
+    data = request.get_json()
+    audio_b64 = data.get("audio_b64")
+    if not audio_b64:
+        return jsonify({"error": "Audio (base64) is required"}), 400
+
+    audio_data = base64.b64decode(audio_b64)
+    temp_audio_path = f"/tmp/{generate_random_string()}.mp3"
+    with open(temp_audio_path, "wb") as f:
+        f.write(audio_data)
+
+    # Use Whisper to transcribe the audio
+    result = whisper_model.transcribe(temp_audio_path)
+    subtitles = result.get("text", "")
+    os.remove(temp_audio_path)
+    return jsonify({"subtitles": subtitles})
+
+# ---------------------------------------
+# Endpoint: Fetch stock footage (example using Pexels)
+# ---------------------------------------
+@app.route('/get_stock_video', methods=['GET'])
+def get_stock_video():
+    query = request.args.get("query", "nature")
+    page = int(request.args.get("page", 1))
+    # Search for videos (assuming the pexels_api client supports it)
+    response = pexels.search_videos(query, page=page, results_per_page=1)
+    videos = response.get("videos", [])
+    if videos:
+        video_url = videos[0].get("video_files", [{}])[0].get("link")
+        return jsonify({"video_url": video_url})
+    else:
+        return jsonify({"error": "No videos found"}), 404
+
+# ---------------------------------------
+# Endpoint: Create final video by merging components (voiceover, subtitles, stock footage)
+# ---------------------------------------
+@app.route('/create_final_video', methods=['POST'])
+def create_final_video():
+    data = request.get_json()
+    stock_video_url = data.get("stock_video_url")
+    audio_url = data.get("audio_url")
+    # For subtitles, you could use the /generate_subtitles endpoint separately
+    subtitles_text = data.get("subtitles", "No subtitles provided.")
+
+    if not stock_video_url or not audio_url:
+        return jsonify({"error": "Stock video URL and audio URL are required."}), 400
+
+    # Download stock video and audio file (this is a simplified example)
+    video_response = requests.get(stock_video_url)
+    audio_response = requests.get(audio_url)
+
+    temp_video_path = f"/tmp/{generate_random_string()}.mp4"
+    temp_audio_path = f"/tmp/{generate_random_string()}.mp3"
+    with open(temp_video_path, "wb") as f:
+        f.write(video_response.content)
+    with open(temp_audio_path, "wb") as f:
+        f.write(audio_response.content)
+
+    # Load video and audio clips with MoviePy
+    video_clip = VideoFileClip(temp_video_path)
+    audio_clip = VideoFileClip(temp_audio_path).audio  # or use AudioFileClip if separate
+
+    # Create a simple TextClip for subtitles (displayed at the bottom)
+    subtitle_clip = TextClip(subtitles_text, fontsize=24, color="white", bg_color="black")\
+                        .set_position(("center", "bottom")).set_duration(video_clip.duration)
+
+    # Set the audio to the video clip
+    final_clip = video_clip.set_audio(audio_clip)
+    # Overlay subtitles
+    final_video = CompositeVideoClip([final_clip, subtitle_clip])
+    final_output_path = f"/tmp/final_video_{generate_random_string()}.mp4"
+    final_video.write_videofile(final_output_path, codec="libx264", audio_codec="aac")
+
+    # (Optionally, upload final video somewhere and return URL)
+    return jsonify({"final_video_path": final_output_path})
+
+# ---------------------------------------
+# Endpoint: OpenAI GPT interaction (if needed)
+# ---------------------------------------
 @app.route('/gpt', methods=['POST'])
 def gpt_interaction():
     data = request.get_json()
-    prompt = data.get('prompt', 'Hello')
-    
-    # Call the OpenAI API to get a response
+    prompt = data.get("prompt", "Hello")
     response = openai.Completion.create(
         engine="text-davinci-003",
         prompt=prompt,
         max_tokens=150
     )
-    
     return jsonify({"response": response.choices[0].text.strip()})
 
 # Run the app
