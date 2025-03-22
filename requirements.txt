@@ -15,9 +15,9 @@ Jinja2>=3.1.2
 Werkzeug>=2.3.3
 blinker>=1.6.2
 ffmpeg-python>=0.2.0
-python-dotenv>=0.20.0  # For loading environment variables securely
-openai==0.27.0         # OpenAI SDK for GPT and other integrations
-pexels-api==1.0.1      # Correct version of the Pexels API client
-whisper==1.0.0         # For automatic transcription/subtitles generation
+python-dotenv>=0.20.0
+openai==0.27.0
+pexels-api==1.0.1
+whisper==1.0.0
 opencv-python==4.6.0.66
-elevenlabs==1.0.0      # For AI voice synthesis
+elevenlabs==1.0.0
