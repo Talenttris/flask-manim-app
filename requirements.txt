@@ -2,9 +2,9 @@ Flask==2.3.2
 python-dotenv==1.0.0
 requests==2.31.0
 moviepy==1.0.3
-elevenlabs==0.2.26  # Updated to latest compatible version
-openai-whisper==20231117  # Correct package name for Whisper
-pexels-api==1.0.1  # Corrected version
+elevenlabs==0.2.26
+openai-whisper==20231117  # Correct package name
+pexels-api==1.0.1
 openai==1.3.6
 numpy==1.24.3
 torch==2.0.1
