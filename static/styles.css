@@ -1,73 +1,119 @@
-/* Global Styles */
+/* General Styles */
 body {
-    font-family: 'Roboto', sans-serif;
-    background-color: #f8f9fa;
+    font-family: 'Poppins', sans-serif;
     margin: 0;
     padding: 0;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: #fff;
+    line-height: 1.6;
 }
 
-h1, h5 {
-    font-family: 'Poppins', sans-serif;
-}
-
-/* Hero Section */
 .container {
-    max-width: 900px;
-    margin: auto;
-    padding: 0 15px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
 }
 
-.text-primary {
-    color: #007bff;
+/* Header */
+header {
+    text-align: center;
+    padding: 2rem 0;
+}
+
+header h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+header p {
+    font-size: 1.2rem;
+    color: #ddd;
 }
 
 /* Form Styles */
-textarea {
-    border-radius: 8px;
-    border: 1px solid #ced4da;
-    transition: all 0.3s ease;
+form {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2rem;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    margin-top: 2rem;
 }
 
-textarea:focus {
-    border-color: #007bff;
-    outline: none;
+form label {
+    display: block;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    color: #fff;
 }
 
-.form-select {
-    border-radius: 8px;
-    border: 1px solid #ced4da;
+form input[type="text"],
+form textarea {
+    width: 100%;
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+    border: none;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 1rem;
 }
 
-.form-select:focus {
-    border-color: #007bff;
-    outline: none;
+form input[type="text"]::placeholder,
+form textarea::placeholder {
+    color: #ccc;
 }
 
-button.btn-primary {
-    border-radius: 8px;
-    padding: 12px 24px;
-    font-size: 18px;
+form button {
+    background: #ff6f61;
+    color: #fff;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.3s ease;
 }
 
-button.btn-primary:hover {
-    background-color: #0056b3;
-    transition: all 0.3s ease;
+form button:hover {
+    background: #ff4a3d;
 }
 
-/* Footer Styles */
+/* Output Section */
+.output {
+    margin-top: 2rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2rem;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.output h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.output p {
+    font-size: 1.1rem;
+    color: #ddd;
+}
+
+/* Footer */
 footer {
-    background-color: #343a40;
-}
-
-footer p {
-    font-size: 14px;
-    color: #adb5bd;
+    text-align: center;
+    margin-top: 3rem;
+    padding: 1rem 0;
+    font-size: 0.9rem;
+    color: #ccc;
 }
 
 footer a {
-    color: #adb5bd;
+    color: #ff6f61;
+    text-decoration: none;
 }
 
 footer a:hover {
-    color: #ffffff;
+    text-decoration: underline;
 }
